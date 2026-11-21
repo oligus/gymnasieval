@@ -1,0 +1,84 @@
+type Query {
+    "Skolor som erbjuder ett program, valfritt filtrerat på kommun. Sorterade på namn."
+    schools(
+        "Programkod, t.ex. TE25 (Teknikprogrammet)."
+        program: ID!
+        "Kommunkod, t.ex. 0114 (Upplands Väsby)."
+        municipality: ID
+    ): [School!]!
+
+    "En skola via Skolverkets skolenhetskod."
+    school(code: ID!): School
+
+    "Alla gymnasieprogram, sorterade på namn."
+    programs: [Program!]!
+
+    "Alla kommuner, sorterade på namn."
+    municipalities: [Municipality!]!
+}
+
+"En gymnasieskola (skolenhet) enligt Skolverket."
+type School {
+    "Skolverkets skolenhetskod."
+    code: ID!
+    name: String!
+    "Huvudmannens namn, t.ex. kommunen eller företaget som driver skolan."
+    organizerName: String
+    organizerType: OrganizerType
+    municipality: Municipality
+    street: String
+    zipCode: String
+    city: String
+    latitude: Float
+    longitude: Float
+    webUrl: String
+    status: SchoolStatus!
+    "Program som skolan erbjuder för nästa läsår."
+    programs: [SchoolProgram!]!
+}
+
+"Ett program på en viss skola, med antagningspoäng och inriktningar."
+type SchoolProgram {
+    program: Program!
+    "Lägsta antagningspoäng senaste antagningen. Saknas om inget tal finns."
+    admissionPointsMin: Float
+    "Genomsnittlig antagningspoäng senaste antagningen."
+    admissionPointsAvg: Float
+    "Året antagningspoängen gäller."
+    admissionYear: Int
+    "Text när poängen inte är ett tal, t.ex. \"alla antagna\"."
+    admissionNote: String
+    studyPaths: [StudyPath!]!
+}
+
+"En inriktning inom ett program."
+type StudyPath {
+    code: ID!
+    name: String!
+}
+
+type Program {
+    "T.ex. TE25."
+    code: ID!
+    name: String!
+}
+
+type Municipality {
+    "SCB:s kommunkod, t.ex. 0114."
+    code: ID!
+    name: String!
+}
+
+enum OrganizerType {
+    KOMMUNAL
+    KOMMUNALFORBUND
+    REGION
+    FRISTAENDE
+}
+
+enum SchoolStatus {
+    AKTIV
+    VILANDE
+    UPPHORT
+    PLANERAD
+}
