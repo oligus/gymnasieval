@@ -45,5 +45,3 @@ out/
 ### Nedladdad Skolverket-data (genereras med skolverket:download) ###
 data/
 
-### Lokala anteckningar (personuppgifter) ###
-HANDOFF.md
