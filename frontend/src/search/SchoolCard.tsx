@@ -1,11 +1,14 @@
-import { ExternalLink, MapPin } from 'lucide-react'
+import { ExternalLink, MapPin, Star } from 'lucide-react'
+import { useState } from 'react'
 import { graphql } from '../gql'
 import type { OrganizerType, SchoolCardFragment } from '../gql/graphql'
 import { admissionChance, formatPoints, type ChanceLevel } from '../lib/chance'
+import { useWorkspace } from '../workspace/workspaceContext'
 
 // Fragmentet beskriver exakt vilka fält kortet behöver. Codegen gör om det till en TypeScript-typ.
 graphql(`
   fragment SchoolCard on School {
+    code
     name
     city
     organizerType
@@ -101,7 +104,8 @@ export function SchoolCard({ school, programCode, merit }: Props) {
           </p>
         </div>
 
-        <div className="shrink-0 text-right">
+        <div className="flex shrink-0 items-start gap-3">
+          <div className="text-right">
           {program?.admissionPointsMin != null ? (
             <>
               <p className="text-2xl font-semibold tracking-tight tabular-nums">
@@ -112,6 +116,8 @@ export function SchoolCard({ school, programCode, merit }: Props) {
           ) : (
             <p className="max-w-28 text-xs text-stone-500">{program?.admissionNote ?? 'Poäng saknas'}</p>
           )}
+          </div>
+          <WatchButton schoolCode={school.code} schoolName={school.name} programCode={programCode} />
         </div>
       </div>
 
@@ -143,5 +149,35 @@ export function SchoolCard({ school, programCode, merit }: Props) {
         </div>
       )}
     </article>
+  )
+}
+
+/** ☆/★ för att bevaka skolan. Första klicket skapar arbetsytan. Döljs med en läslänk. */
+function WatchButton({ schoolCode, schoolName, programCode }: { schoolCode: string; schoolName: string; programCode: string }) {
+  const { isWatched, toggleWatch, readOnly } = useWorkspace()
+  const [busy, setBusy] = useState(false)
+  if (readOnly) return null
+  const watched = isWatched(schoolCode)
+
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      aria-pressed={watched}
+      aria-label={watched ? `Sluta bevaka ${schoolName}` : `Bevaka ${schoolName}`}
+      title={watched ? 'Bevakad – klicka för att ta bort från Min lista' : 'Bevaka – lägg till i Min lista'}
+      onClick={async () => {
+        setBusy(true)
+        await toggleWatch(schoolCode, programCode)
+        setBusy(false)
+      }}
+      className={`grid size-9 place-items-center rounded-full border transition disabled:opacity-50 ${
+        watched
+          ? 'border-amber-300 bg-amber-50 text-amber-500 dark:border-amber-700 dark:bg-amber-950/50'
+          : 'border-stone-200 text-stone-400 hover:border-amber-300 hover:text-amber-500 dark:border-stone-700'
+      }`}
+    >
+      <Star className={`size-4.5 ${watched ? 'fill-current' : ''}`} />
+    </button>
   )
 }

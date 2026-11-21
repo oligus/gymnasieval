@@ -13,6 +13,7 @@
   --color-brand-500: oklch(0.59 0.21 275);
   --color-brand-600: oklch(0.52 0.22 275);
   --color-brand-700: oklch(0.45 0.2 275);
+  --color-brand-800: oklch(0.38 0.16 275);
   --color-brand-900: oklch(0.3 0.12 275);
   --color-brand-950: oklch(0.22 0.08 275);
 }
