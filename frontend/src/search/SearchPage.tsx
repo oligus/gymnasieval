@@ -91,9 +91,10 @@ export function SearchPage() {
       </div>
 
       {search.error && (
-        <p className="rounded-lg bg-red-50 p-4 text-red-800 dark:bg-red-950 dark:text-red-200">
-          Kunde inte hämta skolor. Är backend igång på port 8081?
-        </p>
+        <div className="rounded-lg bg-red-50 p-4 text-red-800 dark:bg-red-950 dark:text-red-200">
+          <p>Kunde inte hämta skolor.</p>
+          <p className="mt-1 font-mono text-xs opacity-80">{search.error.message}</p>
+        </div>
       )}
 
       {schools && (

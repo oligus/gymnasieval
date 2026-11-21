@@ -10,6 +10,7 @@ graphql(`
     organizerType
     webUrl
     municipality {
+      code # nyckelfält för Apollos cache (keyFields i apollo.ts), måste alltid vara med
       name
     }
     programs {
