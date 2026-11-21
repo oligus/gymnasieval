@@ -1,26 +1,32 @@
 import { useQuery } from '@apollo/client/react'
+import { ArrowUpDown, SearchX, Sparkles } from 'lucide-react'
 import { useMemo } from 'react'
 import { graphql } from '../gql'
 import { parseMerit } from '../lib/chance'
 import { useLocalStorage } from '../lib/useLocalStorage'
+import { MunicipalityPicker } from './MunicipalityPicker'
+import { ProgramPicker } from './ProgramPicker'
 import { SchoolCard, type SearchResultSchool } from './SchoolCard'
+import { SearchField, fieldControlClass } from './SearchField'
 
 const SearchOptionsQuery = graphql(`
   query SearchOptions {
     programs {
       code
       name
+      category
     }
     municipalities {
       code
       name
+      county
     }
   }
 `)
 
 const SearchSchoolsQuery = graphql(`
-  query SearchSchools($program: ID!, $municipality: ID) {
-    schools(program: $program, municipality: $municipality) {
+  query SearchSchools($program: ID!, $municipalities: [ID!]) {
+    schools(program: $program, municipalities: $municipalities) {
       code
       ...SchoolCard
     }
@@ -29,21 +35,24 @@ const SearchSchoolsQuery = graphql(`
 
 type SortOrder = 'name' | 'points-asc' | 'points-desc'
 
-const selectClass =
-  'w-full rounded-lg border border-stone-300 bg-white px-3 py-2 dark:border-stone-700 dark:bg-stone-900'
 
 export function SearchPage() {
   const [program, setProgram] = useLocalStorage('search.program', 'TE25')
-  const [municipality, setMunicipality] = useLocalStorage('search.municipality', '')
+  const [municipalitiesJson, setMunicipalitiesJson] = useLocalStorage('search.municipalities', '[]')
+  const municipalities = parseCodes(municipalitiesJson)
   const [meritText, setMeritText] = useLocalStorage('search.merit', '')
   const [sort, setSort] = useLocalStorage('search.sort', 'name')
   const merit = parseMerit(meritText)
 
   const options = useQuery(SearchOptionsQuery)
   const search = useQuery(SearchSchoolsQuery, {
-    variables: { program, municipality: municipality || null },
+    variables: { program, municipalities },
   })
   const schools = (search.data ?? search.previousData)?.schools
+
+  const programs = options.data?.programs ?? []
+  const programName = programs.find((p) => p.code === program)?.name
+  const areaDescription = describeArea(municipalities, options.data?.municipalities ?? [])
 
   const sorted = useMemo(
     () => (schools ? sortSchools(schools, program, sort as SortOrder) : []),
@@ -51,83 +60,137 @@ export function SearchPage() {
   )
 
   return (
-    <div>
-      <h2 className="mb-4 text-xl font-semibold">Hitta gymnasieskolor</h2>
-
-      <div className="mb-6 grid gap-3 sm:grid-cols-[2fr_2fr_1fr]">
-        <label className="text-sm">
-          <span className="mb-1 block text-stone-600 dark:text-stone-400">Program</span>
-          <select className={selectClass} value={program} onChange={(e) => setProgram(e.target.value)}>
-            {options.data?.programs.map((p) => (
-              <option key={p.code} value={p.code}>
-                {p.name}
-              </option>
-            )) ?? <option value={program}>Laddar…</option>}
-          </select>
-        </label>
-
-        <label className="text-sm">
-          <span className="mb-1 block text-stone-600 dark:text-stone-400">Kommun</span>
-          <select className={selectClass} value={municipality} onChange={(e) => setMunicipality(e.target.value)}>
-            <option value="">Hela Sverige</option>
-            {options.data?.municipalities.map((m) => (
-              <option key={m.code} value={m.code}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="text-sm">
-          <span className="mb-1 block text-stone-600 dark:text-stone-400">Ditt meritvärde</span>
-          <input
-            className={selectClass}
-            inputMode="decimal"
-            placeholder="t.ex. 232,5"
-            value={meritText}
-            onChange={(e) => setMeritText(e.target.value)}
-          />
-        </label>
-      </div>
-
-      {search.error && (
-        <div className="rounded-lg bg-red-50 p-4 text-red-800 dark:bg-red-950 dark:text-red-200">
-          <p>Kunde inte hämta skolor.</p>
-          <p className="mt-1 font-mono text-xs opacity-80">{search.error.message}</p>
+    <>
+      {/* ---- Hero ---- */}
+      <section className="relative overflow-hidden pt-28 pb-16 sm:pt-36 sm:pb-24">
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-0">
+          <div className="absolute -top-40 left-1/2 size-[640px] -translate-x-1/2 rounded-full bg-brand-400/30 blur-3xl dark:bg-brand-600/25" />
+          <div className="absolute top-20 -right-32 size-[420px] rounded-full bg-fuchsia-300/30 blur-3xl dark:bg-fuchsia-700/20" />
+          <div className="absolute top-40 -left-32 size-[380px] rounded-full bg-sky-300/30 blur-3xl dark:bg-sky-700/20" />
         </div>
-      )}
 
-      {schools && (
-        <div className="mb-3 flex items-center justify-between text-sm text-stone-600 dark:text-stone-400">
-          <span>
-            {schools.length} {schools.length === 1 ? 'skola' : 'skolor'}
-            {search.loading && ' · uppdaterar…'}
-          </span>
-          <label className="flex items-center gap-2">
-            Sortera
-            <select
-              className="rounded-lg border border-stone-300 bg-white px-2 py-1 dark:border-stone-700 dark:bg-stone-900"
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-            >
-              <option value="name">Namn</option>
-              <option value="points-desc">Antagningspoäng, högst först</option>
-              <option value="points-asc">Antagningspoäng, lägst först</option>
-            </select>
-          </label>
+        <div className="relative mx-auto max-w-5xl px-4 text-center">
+          <p className="mx-auto mb-5 inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-white/70 px-3 py-1 text-sm font-medium text-brand-700 backdrop-blur dark:border-brand-900 dark:bg-brand-950/50 dark:text-brand-300">
+            <Sparkles className="size-4" />
+            Antagningspoäng och program för hösten 2027
+          </p>
+          <h1 className="mx-auto max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
+            Hitta gymnasiet som{' '}
+            <span className="bg-gradient-to-r from-brand-600 via-fuchsia-500 to-sky-500 bg-clip-text text-transparent dark:from-brand-400 dark:via-fuchsia-400 dark:to-sky-400">
+              passar dig
+            </span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-lg text-pretty text-stone-600 dark:text-stone-400">
+            Jämför skolor i hela Sverige. Se antagningspoäng, inriktningar och hur stor chans du har att
+            komma in med ditt meritvärde.
+          </p>
+
+          {/* ---- Sökpanel ---- */}
+          <div className="mx-auto mt-10 grid max-w-4xl gap-px overflow-hidden rounded-2xl bg-stone-200 text-left shadow-xl ring-1 shadow-brand-900/10 ring-stone-200 sm:grid-cols-[1.4fr_1.2fr_1fr] dark:bg-stone-800 dark:shadow-black/40 dark:ring-stone-800">
+            <ProgramPicker programs={programs} value={program} onChange={setProgram} />
+            <MunicipalityPicker
+              municipalities={options.data?.municipalities ?? []}
+              value={municipalities}
+              onChange={(codes) => setMunicipalitiesJson(JSON.stringify(codes))}
+            />
+
+            <SearchField icon={<Sparkles />} label="Ditt meritvärde">
+              <input
+                className={fieldControlClass}
+                inputMode="decimal"
+                placeholder="t.ex. 232,5"
+                value={meritText}
+                onChange={(e) => setMeritText(e.target.value)}
+              />
+            </SearchField>
+          </div>
+          {meritText.trim() !== '' && merit == null && (
+            <p className="mt-3 text-sm text-red-600 dark:text-red-400">Meritvärdet ska vara ett tal mellan 0 och 340.</p>
+          )}
         </div>
-      )}
+      </section>
 
-      {!schools && search.loading && <p className="text-stone-500">Laddar skolor…</p>}
+      {/* ---- Resultat ---- */}
+      <section className="mx-auto max-w-5xl px-4">
+        {search.error && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
+            <p className="font-medium">Kunde inte hämta skolor.</p>
+            <p className="mt-1 font-mono text-xs opacity-80">{search.error.message}</p>
+          </div>
+        )}
 
-      <ul className="space-y-3">
-        {sorted.map((school) => (
-          <li key={school.code}>
-            <SchoolCard school={school} programCode={program} merit={merit} />
-          </li>
-        ))}
-      </ul>
-    </div>
+        {schools && (
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                {schools.length} {schools.length === 1 ? 'skola' : 'skolor'}
+              </h2>
+              <p className="text-sm text-stone-500">
+                {programName ?? program} · {areaDescription}
+                {search.loading && ' · uppdaterar…'}
+              </p>
+            </div>
+            <label className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-sm shadow-sm dark:border-stone-800 dark:bg-stone-900">
+              <ArrowUpDown className="size-4 text-stone-400" />
+              <select className="bg-transparent outline-none" value={sort} onChange={(e) => setSort(e.target.value)}>
+                <option value="name">Namn</option>
+                <option value="points-desc">Poäng, högst först</option>
+                <option value="points-asc">Poäng, lägst först</option>
+              </select>
+            </label>
+          </div>
+        )}
+
+        {!schools && search.loading && <ResultSkeleton />}
+
+        {schools?.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-stone-300 px-6 py-16 text-center dark:border-stone-700">
+            <SearchX className="mx-auto mb-3 size-8 text-stone-400" />
+            <p className="font-medium">Inga skolor hittades</p>
+            <p className="mt-1 text-sm text-stone-500">Prova fler kommuner, eller ta bort alla för att söka i hela Sverige.</p>
+          </div>
+        )}
+
+        <ul className="grid gap-4 md:grid-cols-2">
+          {sorted.map((school) => (
+            <li key={school.code}>
+              <SchoolCard school={school} programCode={program} merit={merit} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>
+  )
+}
+
+function parseCodes(json: string): string[] {
+  try {
+    const value: unknown = JSON.parse(json)
+    return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+/** "hela Sverige", "Täby", "Täby, Sollentuna och Upplands Väsby" eller "Täby, Sollentuna och 3 till". */
+function describeArea(codes: readonly string[], all: readonly { code: string; name: string }[]): string {
+  const names = codes.map((code) => all.find((m) => m.code === code)?.name ?? code)
+  if (names.length === 0) return 'hela Sverige'
+  if (names.length === 1) return names[0]
+  if (names.length <= 3) return `${names.slice(0, -1).join(', ')} och ${names[names.length - 1]}`
+  return `${names.slice(0, 2).join(', ')} och ${names.length - 2} till`
+}
+
+function ResultSkeleton() {
+  return (
+    <ul className="grid gap-4 md:grid-cols-2" aria-label="Laddar skolor">
+      {Array.from({ length: 6 }, (_, i) => (
+        <li
+          key={i}
+          className="h-40 animate-pulse rounded-2xl border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900"
+        />
+      ))}
+    </ul>
   )
 }
 

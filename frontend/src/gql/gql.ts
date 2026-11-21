@@ -15,13 +15,13 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  */
 type Documents = {
     "\n  fragment SchoolCard on School {\n    name\n    city\n    organizerType\n    webUrl\n    municipality {\n      code # nyckelfält för Apollos cache (keyFields i apollo.ts), måste alltid vara med\n      name\n    }\n    programs {\n      program {\n        code\n      }\n      admissionPointsMin\n      admissionYear\n      admissionNote\n      studyPaths {\n        code\n        name\n      }\n    }\n  }\n": typeof types.SchoolCardFragmentDoc,
-    "\n  query SearchOptions {\n    programs {\n      code\n      name\n    }\n    municipalities {\n      code\n      name\n    }\n  }\n": typeof types.SearchOptionsDocument,
-    "\n  query SearchSchools($program: ID!, $municipality: ID) {\n    schools(program: $program, municipality: $municipality) {\n      code\n      ...SchoolCard\n    }\n  }\n": typeof types.SearchSchoolsDocument,
+    "\n  query SearchOptions {\n    programs {\n      code\n      name\n      category\n    }\n    municipalities {\n      code\n      name\n      county\n    }\n  }\n": typeof types.SearchOptionsDocument,
+    "\n  query SearchSchools($program: ID!, $municipalities: [ID!]) {\n    schools(program: $program, municipalities: $municipalities) {\n      code\n      ...SchoolCard\n    }\n  }\n": typeof types.SearchSchoolsDocument,
 };
 const documents: Documents = {
     "\n  fragment SchoolCard on School {\n    name\n    city\n    organizerType\n    webUrl\n    municipality {\n      code # nyckelfält för Apollos cache (keyFields i apollo.ts), måste alltid vara med\n      name\n    }\n    programs {\n      program {\n        code\n      }\n      admissionPointsMin\n      admissionYear\n      admissionNote\n      studyPaths {\n        code\n        name\n      }\n    }\n  }\n": types.SchoolCardFragmentDoc,
-    "\n  query SearchOptions {\n    programs {\n      code\n      name\n    }\n    municipalities {\n      code\n      name\n    }\n  }\n": types.SearchOptionsDocument,
-    "\n  query SearchSchools($program: ID!, $municipality: ID) {\n    schools(program: $program, municipality: $municipality) {\n      code\n      ...SchoolCard\n    }\n  }\n": types.SearchSchoolsDocument,
+    "\n  query SearchOptions {\n    programs {\n      code\n      name\n      category\n    }\n    municipalities {\n      code\n      name\n      county\n    }\n  }\n": types.SearchOptionsDocument,
+    "\n  query SearchSchools($program: ID!, $municipalities: [ID!]) {\n    schools(program: $program, municipalities: $municipalities) {\n      code\n      ...SchoolCard\n    }\n  }\n": types.SearchSchoolsDocument,
 };
 
 /**
@@ -45,11 +45,11 @@ export function graphql(source: "\n  fragment SchoolCard on School {\n    name\n
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query SearchOptions {\n    programs {\n      code\n      name\n    }\n    municipalities {\n      code\n      name\n    }\n  }\n"): (typeof documents)["\n  query SearchOptions {\n    programs {\n      code\n      name\n    }\n    municipalities {\n      code\n      name\n    }\n  }\n"];
+export function graphql(source: "\n  query SearchOptions {\n    programs {\n      code\n      name\n      category\n    }\n    municipalities {\n      code\n      name\n      county\n    }\n  }\n"): (typeof documents)["\n  query SearchOptions {\n    programs {\n      code\n      name\n      category\n    }\n    municipalities {\n      code\n      name\n      county\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query SearchSchools($program: ID!, $municipality: ID) {\n    schools(program: $program, municipality: $municipality) {\n      code\n      ...SchoolCard\n    }\n  }\n"): (typeof documents)["\n  query SearchSchools($program: ID!, $municipality: ID) {\n    schools(program: $program, municipality: $municipality) {\n      code\n      ...SchoolCard\n    }\n  }\n"];
+export function graphql(source: "\n  query SearchSchools($program: ID!, $municipalities: [ID!]) {\n    schools(program: $program, municipalities: $municipalities) {\n      code\n      ...SchoolCard\n    }\n  }\n"): (typeof documents)["\n  query SearchSchools($program: ID!, $municipalities: [ID!]) {\n    schools(program: $program, municipalities: $municipalities) {\n      code\n      ...SchoolCard\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

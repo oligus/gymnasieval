@@ -1,1 +1,30 @@
+@import "@fontsource-variable/inter";
 @import "tailwindcss";
+
+/* Designtokens. Tailwind 4 skapar klasser av dem, t.ex. font-sans och bg-brand-600. */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: oklch(0.97 0.02 275);
+  --color-brand-100: oklch(0.94 0.04 275);
+  --color-brand-200: oklch(0.88 0.08 275);
+  --color-brand-300: oklch(0.79 0.12 275);
+  --color-brand-400: oklch(0.68 0.17 275);
+  --color-brand-500: oklch(0.59 0.21 275);
+  --color-brand-600: oklch(0.52 0.22 275);
+  --color-brand-700: oklch(0.45 0.2 275);
+  --color-brand-900: oklch(0.3 0.12 275);
+  --color-brand-950: oklch(0.22 0.08 275);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11", "ss01"; /* Inters rundare siffror och a */
+  }
+
+  /* Grundfärger på body, så att även paneler som renderas i portaler (utanför #root) ärver dem. */
+  body {
+    @apply bg-stone-50 font-sans text-stone-900 dark:bg-stone-950 dark:text-stone-100;
+  }
+}
