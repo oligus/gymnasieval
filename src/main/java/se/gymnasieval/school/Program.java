@@ -37,6 +37,11 @@ public class Program {
         this.name = name;
     }
 
+    /** Kategori, härledd ur programkoden. Sparas inte i databasen. */
+    public ProgramCategory getCategory() {
+        return ProgramCategory.of(code);
+    }
+
     @Override
     public boolean equals(Object o) {
         return o instanceof Program other && Objects.equals(code, other.code);

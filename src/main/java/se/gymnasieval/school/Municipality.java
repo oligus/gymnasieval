@@ -38,6 +38,11 @@ public class Municipality {
         this.name = name;
     }
 
+    /** Länet, härlett ur kommunkoden. Sparas inte i databasen. */
+    public String getCounty() {
+        return Counties.nameForMunicipality(code);
+    }
+
     @Override
     public boolean equals(Object o) {
         return o instanceof Municipality other && Objects.equals(code, other.code);

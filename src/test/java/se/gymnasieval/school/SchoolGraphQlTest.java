@@ -65,12 +65,40 @@ class SchoolGraphQlTest {
     }
 
     @Test
-    void schoolsCanBeFilteredByMunicipality() {
+    void schoolsCanBeFilteredByOneMunicipality() {
         graphQl.document("""
-                        { schools(program: "TE25", municipality: "0114") { code } }
+                        { schools(program: "TE25", municipalities: ["0114"]) { code } }
                         """)
                 .execute()
                 .path("schools[*].code").entityList(String.class).containsExactly("11111111");
+    }
+
+    @Test
+    void schoolsCanBeFilteredBySeveralMunicipalities() {
+        graphQl.document("""
+                        { schools(program: "NA25", municipalities: ["0114", "0160"]) { code } }
+                        """)
+                .execute()
+                .path("schools[*].code").entityList(String.class).containsExactly("33333333", "11111111");
+    }
+
+    @Test
+    void emptyMunicipalityListMeansWholeSweden() {
+        graphQl.document("""
+                        { schools(program: "TE25", municipalities: []) { code } }
+                        """)
+                .execute()
+                .path("schools[*].code").entityList(String.class).hasSize(2);
+    }
+
+    @Test
+    void municipalityHasCountyAndProgramHasCategory() {
+        graphQl.document("{ programs { code category } municipalities { code county } }")
+                .execute()
+                .path("programs[?(@.code == 'TE25')].category").entityList(String.class)
+                .containsExactly("HOGSKOLEFORBEREDANDE")
+                .path("municipalities[?(@.code == '0114')].county").entityList(String.class)
+                .containsExactly("Stockholms län");
     }
 
     @Test

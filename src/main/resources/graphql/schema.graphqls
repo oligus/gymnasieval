@@ -1,10 +1,10 @@
 type Query {
-    "Skolor som erbjuder ett program, valfritt filtrerat på kommun. Sorterade på namn."
+    "Skolor som erbjuder ett program, valfritt filtrerat på kommuner. Sorterade på namn."
     schools(
         "Programkod, t.ex. TE25 (Teknikprogrammet)."
         program: ID!
-        "Kommunkod, t.ex. 0114 (Upplands Väsby)."
-        municipality: ID
+        "Kommunkoder, t.ex. [\"0114\", \"0163\"]. Tom lista eller utelämnad = hela Sverige."
+        municipalities: [ID!]
     ): [School!]!
 
     "En skola via Skolverkets skolenhetskod."
@@ -61,12 +61,24 @@ type Program {
     "T.ex. TE25."
     code: ID!
     name: String!
+    category: ProgramCategory!
+}
+
+enum ProgramCategory {
+    "De sex nationella högskoleförberedande programmen."
+    HOGSKOLEFORBEREDANDE
+    "De tolv nationella yrkesprogrammen."
+    YRKES
+    "Riksrekryterande utbildningar, introduktionsprogram, IB m.m."
+    OVRIGA
 }
 
 type Municipality {
     "SCB:s kommunkod, t.ex. 0114."
     code: ID!
     name: String!
+    "Länet kommunen ligger i, t.ex. Stockholms län."
+    county: String
 }
 
 enum OrganizerType {

@@ -35,8 +35,11 @@ class SchoolGraphQlController {
     }
 
     @QueryMapping
-    List<School> schools(@Argument String program, @Argument String municipality) {
-        return schools.search(program, municipality);
+    List<School> schools(@Argument String program, @Argument List<String> municipalities) {
+        if (municipalities == null || municipalities.isEmpty()) {
+            return schools.findByProgram(program);
+        }
+        return schools.findByProgramInMunicipalities(program, municipalities);
     }
 
     @QueryMapping
