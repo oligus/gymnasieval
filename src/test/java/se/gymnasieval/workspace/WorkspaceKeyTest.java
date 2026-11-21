@@ -20,10 +20,21 @@ class WorkspaceKeyTest {
     }
 
     @Test
-    void hashIs32BytesAndDeterministic() {
+    void hashIsHexAndDeterministic() {
         String key = WorkspaceKey.generate();
 
-        assertThat(WorkspaceKey.hash(key)).hasSize(32).isEqualTo(WorkspaceKey.hash(key));
+        assertThat(WorkspaceKey.hash(key)).hasSize(64).matches("[0-9a-f]{64}").isEqualTo(WorkspaceKey.hash(key));
+    }
+
+    @Test
+    void viewKeyIsDerivedDeterministicallyFromEditKey() {
+        String editKey = WorkspaceKey.generate();
+
+        String viewKey = WorkspaceKey.deriveViewKey(editKey);
+
+        assertThat(viewKey).isEqualTo(WorkspaceKey.deriveViewKey(editKey)).isNotEqualTo(editKey);
+        assertThat(WorkspaceKey.isValidFormat(viewKey)).isTrue();
+        assertThat(WorkspaceKey.deriveViewKey(WorkspaceKey.generate())).isNotEqualTo(viewKey);
     }
 
     @Test

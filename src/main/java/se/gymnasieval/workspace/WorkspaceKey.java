@@ -4,7 +4,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.regex.Pattern;
 
 /**
@@ -28,12 +30,27 @@ final class WorkspaceKey {
         return ENCODER.encodeToString(bytes);
     }
 
+    /**
+     * Läsnyckeln räknas fram ur redigeringsnyckeln. Den som har redigeringslänken kan alltid
+     * visa läslänken, men SHA-256 går inte att räkna baklänges: läsnyckeln avslöjar aldrig
+     * redigeringsnyckeln. Prefixet "view:" gör att läsnyckeln inte är samma sak som hashen
+     * som sparas i databasen för redigeringsnyckeln.
+     */
+    static String deriveViewKey(String editKey) {
+        byte[] digest = sha256("view:" + editKey);
+        return ENCODER.encodeToString(Arrays.copyOf(digest, KEY_BYTES));
+    }
+
     static boolean isValidFormat(String key) {
         return key != null && FORMAT.matcher(key).matches();
     }
 
-    /** SHA-256 av nyckeln. Det är bara detta som sparas i databasen. */
-    static byte[] hash(String key) {
+    /** SHA-256 av nyckeln som hex (64 tecken). Det är bara detta som sparas i databasen. */
+    static String hash(String key) {
+        return HexFormat.of().formatHex(sha256(key));
+    }
+
+    private static byte[] sha256(String key) {
         try {
             return MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.US_ASCII));
         } catch (NoSuchAlgorithmException e) {

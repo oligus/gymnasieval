@@ -22,11 +22,13 @@ public class Workspace {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // AUTO_INCREMENT i MySQL
     private Long id;
 
-    @Column(nullable = false, columnDefinition = "BINARY(32)")
-    private byte[] editKeyHash;
+    /** SHA-256 av redigeringsnyckeln, som hex. */
+    @Column(nullable = false, columnDefinition = "CHAR(64)")
+    private String editKeyHash;
 
-    @Column(nullable = false, columnDefinition = "BINARY(32)")
-    private byte[] viewKeyHash;
+    /** SHA-256 av läsnyckeln, som hex. */
+    @Column(nullable = false, columnDefinition = "CHAR(64)")
+    private String viewKeyHash;
 
     @Column(precision = 4, scale = 1)
     private BigDecimal meritValue;
@@ -53,7 +55,7 @@ public class Workspace {
     protected Workspace() {
     }
 
-    Workspace(byte[] editKeyHash, byte[] viewKeyHash, Instant now) {
+    Workspace(String editKeyHash, String viewKeyHash, Instant now) {
         this.editKeyHash = editKeyHash;
         this.viewKeyHash = viewKeyHash;
         this.createdAt = now;

@@ -33,14 +33,13 @@ class WorkspaceServiceTest {
         CreatedWorkspace created = service.create();
         em.flush();
 
-        byte[] storedEditHash = (byte[]) em.getEntityManager()
+        String storedEditHash = (String) em.getEntityManager()
                 .createNativeQuery("SELECT edit_key_hash FROM workspace WHERE id = :id")
                 .setParameter("id", created.id())
                 .getSingleResult();
 
-        assertThat(storedEditHash).isEqualTo(WorkspaceKey.hash(created.editKey()));
-        assertThat(new String(storedEditHash, java.nio.charset.StandardCharsets.ISO_8859_1))
-                .doesNotContain(created.editKey());
+        assertThat(storedEditHash).isEqualTo(WorkspaceKey.hash(created.editKey())).hasSize(64);
+        assertThat(storedEditHash).doesNotContain(created.editKey());
     }
 
     @Test

@@ -15,6 +15,59 @@ type Query {
 
     "Alla kommuner, sorterade på namn."
     municipalities: [Municipality!]!
+
+    "Arbetsytan som nyckeln i headern X-Workspace-Key leder till. Null utan giltig nyckel."
+    workspace: Workspace
+}
+
+type Mutation {
+    "Skapar en ny arbetsyta. Nycklarna returneras bara här, spara dem i länken."
+    createWorkspace: CreatedWorkspace!
+
+    "Bevakar en skola för ett program. Kräver redigeringsnyckeln."
+    watchSchool(school: ID!, program: ID!): Workspace!
+
+    "Slutar bevaka en skola. Kräver redigeringsnyckeln."
+    unwatchSchool(school: ID!): Workspace!
+}
+
+"En ny arbetsyta med sina nycklar i klartext."
+type CreatedWorkspace {
+    "Ger full åtkomst. Lägg i länken som #k=…"
+    editKey: String!
+    "Ger bara läsåtkomst."
+    viewKey: String!
+    workspace: Workspace!
+}
+
+"All sparad data för en person eller familj, utan konto."
+type Workspace {
+    id: ID!
+    "Vad nyckeln som användes ger rätt till."
+    access: AccessLevel!
+    "Läsnyckeln, för att kunna dela en skrivskyddad länk. Bara med redigeringsnyckeln."
+    viewKey: String
+    watchedSchools: [WatchedSchool!]!
+}
+
+enum AccessLevel {
+    EDIT
+    VIEW
+}
+
+"En bevakad skola, för det program den bevakades för."
+type WatchedSchool {
+    school: School!
+    program: Program!
+    status: WatchStatus
+    note: String
+}
+
+enum WatchStatus {
+    INTRESSANT
+    BESOK
+    BESOKT
+    BORTVALD
 }
 
 "En gymnasieskola (skolenhet) enligt Skolverket."
