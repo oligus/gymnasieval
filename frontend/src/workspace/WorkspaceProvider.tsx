@@ -1,16 +1,27 @@
 import { useApolloClient, useMutation, useQuery } from '@apollo/client/react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { graphql } from '../gql'
+import { parseMerit } from '../lib/chance'
 import { ShareDialog } from './ShareDialog'
 import { SwitchWorkspaceDialog } from './SwitchWorkspaceDialog'
 import { WorkspaceContext, type WorkspaceState } from './workspaceContext'
+import { LOCAL_MERIT_KEY, SetMeritMutation } from './useMerit'
 import { resolvePendingUrlKey, setWorkspaceKey, usePendingUrlKey, useWorkspaceKey } from './workspaceKey'
+
+function readLocal(key: string): string {
+  try {
+    return localStorage.getItem(key) ?? ''
+  } catch {
+    return ''
+  }
+}
 
 graphql(`
   fragment WorkspaceFields on Workspace {
     id
     access
     viewKey
+    meritValue
     watchedSchools {
       school {
         code
@@ -67,6 +78,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [createWorkspace] = useMutation(CreateWorkspaceMutation)
   const [watchSchool] = useMutation(WatchSchoolMutation)
   const [unwatchSchool] = useMutation(UnwatchSchoolMutation)
+  const [saveMerit] = useMutation(SetMeritMutation)
 
   // En länk till samma arbetsyta (t.ex. läslänken till den egna listan) behöver ingen fråga.
   const pendingIsSameWorkspace = pendingKey != null && workspace?.viewKey === pendingKey
@@ -101,7 +113,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             setWorkspaceKey(created.data!.createWorkspace.editKey)
           }
           await watchSchool({ variables: { school: schoolCode, program: programCode } })
-          if (isNew) setShareOpen(true) // visa länkarna en gång, direkt när listan skapats
+          if (isNew) {
+            // Meritvärdet som skrevs in innan listan fanns följer med in i arbetsytan.
+            const localMerit = parseMerit(readLocal(LOCAL_MERIT_KEY))
+            if (localMerit != null) await saveMerit({ variables: { merit: localMerit } })
+            setShareOpen(true) // visa länkarna en gång, direkt när listan skapats
+          }
         } catch (e) {
           setError(e instanceof Error ? e.message : 'Något gick fel.')
         }
@@ -112,7 +129,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         void client.resetStore()
       },
     }
-  }, [workspace, key, client, createWorkspace, watchSchool, unwatchSchool])
+  }, [workspace, key, client, createWorkspace, watchSchool, unwatchSchool, saveMerit])
 
   return (
     <WorkspaceContext.Provider value={state}>

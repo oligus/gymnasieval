@@ -7,7 +7,10 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 import se.gymnasieval.workspace.WorkspaceService.CreatedWorkspace;
+import se.gymnasieval.workspace.WorkspaceService.WatchedSchoolView;
+import se.gymnasieval.workspace.WorkspaceService.Weight;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static se.gymnasieval.workspace.WorkspaceKeyInterceptor.CONTEXT_KEY;
@@ -49,6 +52,40 @@ class WorkspaceGraphQlController {
         return service.requireEdit(key);
     }
 
+    @MutationMapping
+    WorkspaceAccess setMerit(@ContextValue(name = CONTEXT_KEY, required = false) String key, @Argument Double merit) {
+        service.setMerit(key, merit);
+        return service.requireEdit(key);
+    }
+
+    @MutationMapping
+    WorkspaceAccess setWeight(@ContextValue(name = CONTEXT_KEY, required = false) String key,
+                              @Argument Criterion criterion, @Argument int weight) {
+        service.setWeight(key, criterion, weight);
+        return service.requireEdit(key);
+    }
+
+    @MutationMapping
+    WorkspaceAccess setScore(@ContextValue(name = CONTEXT_KEY, required = false) String key,
+                             @Argument String school, @Argument Criterion criterion, @Argument Integer score) {
+        service.setScore(key, school, criterion, score);
+        return service.requireEdit(key);
+    }
+
+    @MutationMapping
+    WorkspaceAccess setStatus(@ContextValue(name = CONTEXT_KEY, required = false) String key,
+                              @Argument String school, @Argument WatchStatus status) {
+        service.setStatus(key, school, status);
+        return service.requireEdit(key);
+    }
+
+    @MutationMapping
+    WorkspaceAccess setNote(@ContextValue(name = CONTEXT_KEY, required = false) String key,
+                            @Argument String school, @Argument String note) {
+        service.setNote(key, school, note);
+        return service.requireEdit(key);
+    }
+
     // ---- CreatedWorkspace ----
 
     @SchemaMapping(typeName = "CreatedWorkspace", field = "workspace")
@@ -75,7 +112,17 @@ class WorkspaceGraphQlController {
     }
 
     @SchemaMapping(typeName = "Workspace", field = "watchedSchools")
-    List<WorkspaceSchool> watchedSchools(WorkspaceAccess access) {
+    List<WatchedSchoolView> watchedSchools(WorkspaceAccess access) {
         return service.watchedSchools(access.workspace().getId());
+    }
+
+    @SchemaMapping(typeName = "Workspace", field = "meritValue")
+    BigDecimal meritValue(WorkspaceAccess access) {
+        return access.workspace().getMeritValue();
+    }
+
+    @SchemaMapping(typeName = "Workspace", field = "weights")
+    List<Weight> weights(WorkspaceAccess access) {
+        return service.weights(access.workspace().getId());
     }
 }

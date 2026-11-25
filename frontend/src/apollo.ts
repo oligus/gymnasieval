@@ -26,10 +26,14 @@ export const apolloClient = new ApolloClient({
       Program: { keyFields: ['code'] },
       Municipality: { keyFields: ['code'] },
       Workspace: { keyFields: ['id'] },
+      // En bevakad skola identifieras av skolans kod. Då slås fält från olika frågor ihop
+      // (t.ex. stjärnan i sökningen och betygen i Min lista) i stället för att skriva över varandra.
+      WatchedSchool: { keyFields: ['school', ['code']] },
       // Typer utan eget id sparas inbäddade i sin förälder.
       SchoolProgram: { keyFields: false },
       StudyPath: { keyFields: false },
-      WatchedSchool: { keyFields: false },
+      Weight: { keyFields: false },
+      Score: { keyFields: false },
     },
   }),
 })

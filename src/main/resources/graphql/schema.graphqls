@@ -29,6 +29,21 @@ type Mutation {
 
     "Slutar bevaka en skola. Kräver redigeringsnyckeln."
     unwatchSchool(school: ID!): Workspace!
+
+    "Sätter meritvärdet (0–340), eller tar bort det med null."
+    setMerit(merit: Float): Workspace!
+
+    "Sätter hur viktigt ett kriterium är (0–5)."
+    setWeight(criterion: Criterion!, weight: Int!): Workspace!
+
+    "Sätter ett betyg 1–5 på en bevakad skola, eller tar bort det med null."
+    setScore(school: ID!, criterion: Criterion!, score: Int): Workspace!
+
+    "Sätter status på en bevakad skola, eller tar bort den med null."
+    setStatus(school: ID!, status: WatchStatus): Workspace!
+
+    "Sparar en anteckning om en bevakad skola. Tom text tar bort den."
+    setNote(school: ID!, note: String): Workspace!
 }
 
 "En ny arbetsyta med sina nycklar i klartext."
@@ -47,7 +62,40 @@ type Workspace {
     access: AccessLevel!
     "Läsnyckeln, för att kunna dela en skrivskyddad länk. Bara med redigeringsnyckeln."
     viewKey: String
+    "Meritvärdet (max 340) som antagningschansen räknas mot."
+    meritValue: Float
+    "Vikt 0–5 per kriterium, alltid alla kriterier."
+    weights: [Weight!]!
     watchedSchools: [WatchedSchool!]!
+}
+
+"Hur viktigt ett kriterium är, 0 = spelar ingen roll, 5 = viktigast."
+type Weight {
+    criterion: Criterion!
+    weight: Int!
+}
+
+"Ett betyg 1–5 på ett kriterium."
+type Score {
+    criterion: Criterion!
+    score: Int!
+}
+
+enum Criterion {
+    "Dörr till dörr, antal byten."
+    RESTID
+    "Finns inriktningen man vill läsa?"
+    INRIKTNING
+    "Antagningspoäng: studiemiljö och konkurrens."
+    POANG
+    "Rykte och resultat."
+    RYKTE
+    "Profil, t.ex. robotik, spel, spets, fjärde år."
+    PROFIL
+    "Skolmiljö: lokaler, labb, storlek, stämning."
+    MILJO
+    "Intryck från öppet hus."
+    BESOK
 }
 
 enum AccessLevel {
@@ -61,6 +109,12 @@ type WatchedSchool {
     program: Program!
     status: WatchStatus
     note: String
+    "Satta betyg. Kriterier utan betyg saknas i listan."
+    scores: [Score!]!
+    "Viktat medel (0–5) av satta betyg. Null om inga betyg finns."
+    totalScore: Float
+    "Antal kriterier som saknar betyg."
+    missingScores: Int!
 }
 
 enum WatchStatus {

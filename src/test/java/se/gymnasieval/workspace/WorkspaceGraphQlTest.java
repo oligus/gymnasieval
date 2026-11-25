@@ -131,6 +131,94 @@ class WorkspaceGraphQlTest {
                 .errors().expect(e -> e.getErrorType() == ErrorType.BAD_REQUEST);
     }
 
+    @Test
+    void scoresAndWeightsGiveWeightedTotal() {
+        HttpGraphQlTester edit = withKey(createWorkspace().get("editKey"));
+        edit.document("mutation { watchSchool(school: \"44444444\", program: \"TE25\") { id } }").execute();
+
+        edit.document("mutation { setWeight(criterion: RESTID, weight: 3) { id } }").execute();
+        edit.document("mutation { setWeight(criterion: INRIKTNING, weight: 1) { id } }").execute();
+        edit.document("mutation { setScore(school: \"44444444\", criterion: RESTID, score: 5) { id } }").execute();
+        edit.document("""
+                        mutation {
+                          setScore(school: "44444444", criterion: INRIKTNING, score: 2) {
+                            weights { criterion weight }
+                            watchedSchools { scores { criterion score } totalScore missingScores }
+                          }
+                        }
+                        """)
+                .execute()
+                // (5*3 + 2*1) / 4 = 4,25; sju kriterier varav två satta
+                .path("setScore.watchedSchools[0].totalScore").entity(Double.class).isEqualTo(4.25)
+                .path("setScore.watchedSchools[0].missingScores").entity(Integer.class).isEqualTo(5)
+                .path("setScore.watchedSchools[0].scores[*].criterion").entityList(String.class)
+                .containsExactly("RESTID", "INRIKTNING")
+                .path("setScore.weights").entityList(Object.class).hasSize(7);
+
+        // null tar bort betyget
+        edit.document("mutation { setScore(school: \"44444444\", criterion: INRIKTNING, score: null) { watchedSchools { totalScore } } }")
+                .execute()
+                .path("setScore.watchedSchools[0].totalScore").entity(Double.class).isEqualTo(5.0);
+    }
+
+    @Test
+    void statusNoteAndMeritAreSaved() {
+        HttpGraphQlTester edit = withKey(createWorkspace().get("editKey"));
+        edit.document("mutation { watchSchool(school: \"44444444\", program: \"TE25\") { id } }").execute();
+
+        edit.document("mutation { setStatus(school: \"44444444\", status: BESOK) { id } }").execute();
+        edit.document("mutation { setNote(school: \"44444444\", note: \"Bra labb\") { id } }").execute();
+        edit.document("mutation { setMerit(merit: 232.5) { meritValue watchedSchools { status note } } }")
+                .execute()
+                .path("setMerit.meritValue").entity(Double.class).isEqualTo(232.5)
+                .path("setMerit.watchedSchools[0].status").entity(String.class).isEqualTo("BESOK")
+                .path("setMerit.watchedSchools[0].note").entity(String.class).isEqualTo("Bra labb");
+    }
+
+    @Test
+    void invalidValuesAreBadRequests() {
+        HttpGraphQlTester edit = withKey(createWorkspace().get("editKey"));
+        edit.document("mutation { watchSchool(school: \"44444444\", program: \"TE25\") { id } }").execute();
+
+        edit.document("mutation { setMerit(merit: 400) { id } }")
+                .execute().errors().expect(e -> e.getErrorType() == ErrorType.BAD_REQUEST);
+        edit.document("mutation { setWeight(criterion: RESTID, weight: 9) { id } }")
+                .execute().errors().expect(e -> e.getErrorType() == ErrorType.BAD_REQUEST);
+        edit.document("mutation { setScore(school: \"44444444\", criterion: RESTID, score: 0) { id } }")
+                .execute().errors().expect(e -> e.getErrorType() == ErrorType.BAD_REQUEST);
+        edit.document("mutation { setScore(school: \"55555555\", criterion: RESTID, score: 3) { id } }")
+                .execute().errors().expect(e -> e.getErrorType() == ErrorType.BAD_REQUEST); // inte bevakad
+    }
+
+    @Test
+    void viewKeyCannotScore() {
+        Map<String, String> keys = createWorkspace();
+        withKey(keys.get("editKey"))
+                .document("mutation { watchSchool(school: \"44444444\", program: \"TE25\") { id } }").execute();
+
+        withKey(keys.get("viewKey"))
+                .document("mutation { setScore(school: \"44444444\", criterion: RESTID, score: 3) { id } }")
+                .execute()
+                .errors().expect(e -> e.getErrorType() == ErrorType.FORBIDDEN);
+    }
+
+    @Test
+    void unwatchRemovesScoresToo() {
+        HttpGraphQlTester edit = withKey(createWorkspace().get("editKey"));
+        edit.document("mutation { watchSchool(school: \"44444444\", program: \"TE25\") { id } }").execute();
+        edit.document("mutation { setScore(school: \"44444444\", criterion: RESTID, score: 4) { id } }").execute();
+
+        // Betygen pekar på bevakningen med en främmande nyckel; borttagningen får inte krocka med den.
+        edit.document("mutation { unwatchSchool(school: \"44444444\") { watchedSchools { school { code } } } }")
+                .execute()
+                .path("unwatchSchool.watchedSchools").entityList(Object.class).hasSize(0);
+
+        // Bevakas skolan igen börjar den utan gamla betyg.
+        edit.document("mutation { watchSchool(school: \"44444444\", program: \"TE25\") { watchedSchools { scores { criterion } } } }")
+                .execute()
+                .path("watchSchool.watchedSchools[0].scores").entityList(Object.class).hasSize(0);
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, String> createWorkspace() {
         Map<String, Object> created = graphQl.document("mutation { createWorkspace { editKey viewKey workspace { id access } } }")

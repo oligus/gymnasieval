@@ -8,12 +8,13 @@ import java.util.List;
 
 interface WorkspaceSchoolRepository extends JpaRepository<WorkspaceSchool, WorkspaceSchoolId> {
 
-    /** Bevakade skolor med skola, kommun och program ifyllda, så att GraphQL kan läsa dem utan transaktion. */
+    /** Bevakade skolor med skola, kommun, program och betyg ifyllda, så att GraphQL kan läsa dem utan transaktion. */
     @Query("""
             select ws from WorkspaceSchool ws
             join fetch ws.school s
             left join fetch s.municipality
             join fetch ws.program
+            left join fetch ws.scores
             where ws.id.workspaceId = :workspaceId
             order by s.name
             """)

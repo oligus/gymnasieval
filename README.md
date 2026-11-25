@@ -9,7 +9,7 @@ sätta egna betyg per kriterium och planera besök på öppet hus.
 - **Backend:** Java 25, Spring Boot 4, Spring Data JPA / Hibernate, Flyway
 - **Databas:** MySQL 8.4 (Docker Compose under utveckling)
 - **Tester:** JUnit 5, AssertJ, Testcontainers
-- **Frontend (planerad):** React, TypeScript, Vite
+- **Frontend:** React, TypeScript, Vite
 
 ## Kom igång
 

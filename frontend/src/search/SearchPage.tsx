@@ -2,8 +2,8 @@ import { useQuery } from '@apollo/client/react'
 import { ArrowUpDown, SearchX, Sparkles } from 'lucide-react'
 import { useMemo } from 'react'
 import { graphql } from '../gql'
-import { parseMerit } from '../lib/chance'
 import { useLocalStorage } from '../lib/useLocalStorage'
+import { useMerit } from '../workspace/useMerit'
 import { MunicipalityPicker } from './MunicipalityPicker'
 import { ProgramPicker } from './ProgramPicker'
 import { SchoolCard, type SearchResultSchool } from './SchoolCard'
@@ -40,9 +40,8 @@ export function SearchPage() {
   const [program, setProgram] = useLocalStorage('search.program', 'TE25')
   const [municipalitiesJson, setMunicipalitiesJson] = useLocalStorage('search.municipalities', '[]')
   const municipalities = parseCodes(municipalitiesJson)
-  const [meritText, setMeritText] = useLocalStorage('search.merit', '')
+  const { text: meritText, setText: setMeritText, merit, readOnly: meritReadOnly } = useMerit()
   const [sort, setSort] = useLocalStorage('search.sort', 'name')
-  const merit = parseMerit(meritText)
 
   const options = useQuery(SearchOptionsQuery)
   const search = useQuery(SearchSchoolsQuery, {
@@ -100,6 +99,7 @@ export function SearchPage() {
                 inputMode="decimal"
                 placeholder="t.ex. 232,5"
                 value={meritText}
+                readOnly={meritReadOnly}
                 onChange={(e) => setMeritText(e.target.value)}
               />
             </SearchField>
